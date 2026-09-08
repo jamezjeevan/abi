@@ -362,6 +362,7 @@ export const login = async ({ identifier, password, selectedRole }) => {
   // 2. Supabase Authentication
   if (isSupabaseConfigured()) {
     let authResult = null;
+    
     try {
       authResult = await supabase.auth.signInWithPassword({
         email,

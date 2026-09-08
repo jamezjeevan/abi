@@ -996,6 +996,77 @@ export const campusStore = {
   },
 
   // ----------------------------------------------------
+  // HARD ELIGIBILITY VERIFICATION (STEP 6)
+  // ----------------------------------------------------
+  submitApplicationHardEligible({ studentId, jobId, eligibility }) {
+    const student = store.students.find(s => s.id === studentId);
+    if (!student) throw new Error('Student profile not found.');
+
+    const job = store.jobs.find(j => j.id === jobId);
+    if (!job) throw new Error('Recruitment post not found.');
+
+    // Check existing application
+    const existing = store.applications.find(a => a.job_id === jobId && a.student_id === studentId);
+    if (existing) {
+      throw new Error('You have already submitted an application for this recruitment.');
+    }
+
+    if (!eligibility || !eligibility.isEligible) {
+      const msg = eligibility?.reasons?.join(' ') || 'Student does not meet hard eligibility criteria.';
+      throw new Error(`Hard eligibility check failed: ${msg}`);
+    }
+
+    const newApplication = {
+      id: 'app-' + Date.now(),
+      job_id: jobId,
+      student_id: studentId,
+      student_name: student.name,
+      register_number: student.register_number,
+      department: student.department,
+      cgpa: student.cgpa,
+      year: student.year,
+      skills: student.skills || [],
+      resume_name: student.resume_name || 'Resume.pdf',
+      resume_url: student.resume_url || '#resume',
+      job_title: job.job_title,
+      company_name: job.company_name,
+      company_id: job.company_id,
+      mentor_id: student.mentor_id,
+      status: 'eligible', // Step 6: Hard eligibility verified
+      ai_match_score: null, // Zero Gemini dependency in Step 6
+      eligibility: 'Eligible (Hard Check Passed)',
+      ai_analysis: {
+        stage: 'hard_eligibility_passed',
+        hard_eligibility: eligibility,
+        verified_at: new Date().toISOString()
+      },
+      applied_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    store.applications.unshift(newApplication);
+
+    // Notify Student of eligibility clearance
+    store.notifications.push({
+      id: 'notif-stu-' + Date.now(),
+      user_id: student.user_id,
+      type: 'ELIGIBLE',
+      title: 'Hard Eligibility Verified',
+      message: `You meet all deterministic criteria for ${job.job_title} at ${job.company_name}. Prepared for Gemini Matching.`,
+      reference_id: newApplication.id,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+
+    notifySubscribers();
+    return {
+      application: newApplication,
+      eligibility,
+      message: 'Hard eligibility verified. Application prepared for Gemini Resume Matching.'
+    };
+  },
+
+  // ----------------------------------------------------
   // AI RESUME MATCHING & APPLICATION SUBMISSION
   // ----------------------------------------------------
   submitApplicationWithAI({ studentId, jobId }) {

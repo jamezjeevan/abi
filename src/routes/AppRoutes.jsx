@@ -21,7 +21,7 @@ import {
   StudentNotifications, 
   StudentMessages, 
   StudentProfile 
-} from '../pages/student/StudentSubPages';
+} from '../pages/student/StudentDashboard';
 
 // Faculty Pages
 import { 
